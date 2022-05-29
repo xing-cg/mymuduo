@@ -103,7 +103,7 @@ private:
 	void update();
 private:
     /* handleEventWithGuard - 受保护地处理事件 */
-	void HandleEventWithGuard(Timestamp receiveTime);
+	void handleEventWithGuard(Timestamp receiveTime);
 
 private:
     EventLoop * m_loop; /* 事件循环 */
