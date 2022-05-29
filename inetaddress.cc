@@ -1,4 +1,4 @@
-#include"InetAddress.h"
+#include"inetaddress.h"
 
 #include<strings.h>     //bzero(&m_addr, sizeof m_addr)
 #include<arpa/inet.h>   //inet_addr(IP.c_str())
