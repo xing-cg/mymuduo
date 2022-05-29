@@ -1,0 +1,10 @@
+# Build and Release Folders
+bin-debug/
+bin-release/
+[Oo]bj/
+[Bb]in/
+[Bb]uild/
+
+# Other files and folders
+.settings/
+.vscode/
