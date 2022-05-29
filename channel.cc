@@ -48,8 +48,7 @@ void Channel::remove()
     // m_loop->removeChannel(this);
 }
 /**
- * @brief 根据poller通知的channel发生的具体事件，
- * 由channel负责调用相应的回调函数
+ * @brief fd得到poller的事件通知后，处理事件的函数
  */
 void Channel::handleEvent(Timestamp receiveTime)
 {
@@ -66,6 +65,10 @@ void Channel::handleEvent(Timestamp receiveTime)
         handleEventWithGuard(receiveTime);
     }
 }
+/**
+ * @brief 根据poller通知的channel发生的具体事件，
+ * 由channel负责调用相应的回调函数
+ */
 void Channel::handleEventWithGuard(Timestamp receiveTime)
 {
     LOG_INFO("channel handleEvent revents: %d\n", m_revents);
