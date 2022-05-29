@@ -19,12 +19,92 @@ public:
     Channel(EventLoop *loop, int fd);
     ~Channel();
 public:
-    void handleEvent(Timestamp receiveTime);
-
-public:
     /* 定义通用事件回调函数、只读事件回调函数的函数对象类型别名 */
     using EventCallback = std::function<void()>;
     using ReadEventCallback = std::function<void(Timestamp)>;
+public:
+    /* 对外提供的设置回调函数对象的接口 */
+    void setReadCallback(ReadEventCallback cb);
+    void setWriteCallback(EventCallback cb);
+    void setCloseCallback(EventCallback cb);
+    void setErrorCallback(EventCallback cb);
+public:
+    /* fd得到poller的通知后，处理事件 */
+    void handleEvent(Timestamp receiveTime);
+
+public:
+    /* 防止channel被手动remove后，还在执行回调操作 */
+    void tie(const std::shared_ptr<void>&);
+
+/* 以下是fd、events、revents相关的接口 */
+public:
+    int fd() const {return m_fd;}
+    int events() const {return m_events;}
+    /* 向poller提供的设置revents的接口 */
+    int set_revents(int revt)
+    {
+        m_revents = revt;
+    }
+    /* 判断函数：判断有没有注册事件等等 */
+    bool isNoneEvent() const
+    {
+        return m_events == kNoneEvent;
+    }
+	bool isWriting() const
+    {
+        return m_events & kWriteEvent;
+    }
+	bool isReading() const
+    {
+        return m_events & kReadEvent;
+    }
+    /* 使能、使不能函数：设置fd相应的事件状态。
+     * 对m_events进行位操作之后调用update()，即epoll_ctl */
+	void enableReading()
+    {
+        m_events |= kReadEvent;
+        update();
+    }
+	void disableReading()
+    {
+        m_events &= ~kReadEvent;
+        update();
+    }
+	void enableWriting()
+    {
+        m_events |= kWriteEvent;
+        update();
+    }
+	void disableWriting()
+    {
+        m_events &= ~kWriteEvent;
+    }
+	void disableAll()
+    {
+        m_events = kNoneEvent;
+        update();
+    }
+
+public:
+    /* 与EventLoop相关 - 获取所属的Loop */
+	EventLoop * ownerLoop() {return m_loop;}
+public:
+    /* 删除本channel */
+	void remove();
+/* 其他函数 */
+public:
+    /* for poller 的函数 */
+	int index() {return m_index;}
+	void set_index(int idx) {m_index = idx;}
+
+/*************************私有成员*************************/
+private:
+    /* update() - 相当于调用epoll_ctl */
+	void update();
+private:
+    /* handleEventWithGuard - 受保护地处理事件 */
+	void HandleEventWithGuard(Timestamp receiveTime);
+
 private:
     EventLoop * m_loop; /* 事件循环 */
     const int m_fd;     /* fd，即Polle监听的对象 */
@@ -38,8 +118,9 @@ private:
     static const int kReadEvent;
     static const int kWriteEvent;
 private:
-    /* 因为channel通道里面能够获知fd发生的事件revents，
-     * 所以它负责调用具体事件的回调操作 */
+    /* 四个函数对象，可以绑定外部用户传入的相关操作。
+     * 因为channel知道发生了哪些事情（revents记录），
+     * 所以channel负责调用具体事件的回调函数。 */
     ReadEventCallback m_readCallback;
     EventCallback m_writeCallback;
     EventCallback m_closeCallback;
