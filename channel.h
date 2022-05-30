@@ -41,7 +41,7 @@ public:
     int fd() const {return m_fd;}
     int events() const {return m_events;}
     /* 向poller提供的设置revents的接口 */
-    int set_revents(int revt)
+    void set_revents(int revt)
     {
         m_revents = revt;
     }
