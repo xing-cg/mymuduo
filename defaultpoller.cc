@@ -5,15 +5,16 @@
  */
 
 #include"poller.h"
+#include"epollpoller.h"
 #include<cstdlib>   //::getenv("xxx")
 Poller * Poller::newDefaultPoller(EventLoop *loop)
 {
-    if(::getenv("MUDUO_USE_POLL"))
+    if(getenv("MUDUO_USE_POLL"))
     {
-        return nullptr;     //生成poll实例对象
+        return nullptr;                 //生成poll实例对象
     }
     else
     {
-        return nullptr;     //生成epoll实例对象
+        return new EpollPoller(loop);   //生成epoll实例对象
     }
 }

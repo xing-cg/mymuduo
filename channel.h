@@ -24,10 +24,22 @@ public:
     using ReadEventCallback = std::function<void(Timestamp)>;
 public:
     /* 对外提供的设置回调函数对象的接口 */
-    void setReadCallback(ReadEventCallback cb);
-    void setWriteCallback(EventCallback cb);
-    void setCloseCallback(EventCallback cb);
-    void setErrorCallback(EventCallback cb);
+    void setReadCallback(ReadEventCallback cb)
+    {
+        m_readCallback = std::move(cb);
+    }
+    void setWriteCallback(EventCallback cb)
+    {
+        m_writeCallback = std::move(cb);
+    }
+    void setCloseCallback(EventCallback cb)
+    {
+        m_closeCallback = std::move(cb);
+    }
+    void setErrorCallback(EventCallback cb)
+    {
+        m_errorCallback = std::move(cb);
+    }
 public:
     /* fd得到poller的通知后，处理事件 */
     void handleEvent(Timestamp receiveTime);
