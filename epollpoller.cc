@@ -7,7 +7,9 @@
 
 #include"channel.h"
 #include<cassert>
-#include<cstring>       //memset
+#include<cstring>       //bzero
+
+#include"timestamp.h"
 const int kNew 		= -1;	//从未添加到epoll的channel
 const int kAdded 	= 1;	//已经添加到epoll的channel
 const int kDeleted 	= 2;	//已把该channel从epoll中删除
@@ -46,8 +48,8 @@ void EpollPoller::updateChannel(Channel *channel)
     /* index 表示的是channel的三种状态之一 */
     const int index = channel->index();
     const int fd = channel->fd();
-    LOG_INFO("fd = %d, events = %d, index = %d\n",
-             fd, channel->events(), index);
+    LOG_INFO("function: %s, fd: %d, events: %d, index: %d\n",
+             __FUNCTION__, fd, channel->events(), index);
     if(index == kNew || index == kDeleted)
     {
         if(index == kNew)           //表示此channel未添加到poller中
@@ -87,7 +89,7 @@ void EpollPoller::updateChannel(Channel *channel)
 void EpollPoller::update(int operation, Channel * channel)
 {
     struct epoll_event event;
-    memset(&event, 0, sizeof event);
+    bzero(&event, sizeof event);
     event.events = channel->events();
     event.data.ptr = channel;
     int fd = channel->fd();
@@ -110,12 +112,15 @@ void EpollPoller::update(int operation, Channel * channel)
 void EpollPoller::removeChannel(Channel *channel)
 {
     int fd = channel->fd();
+    LOG_INFO("function: %s, fd: %d\n",
+             __FUNCTION__, fd);
     assert(m_channels.find(fd) != m_channels.end());
     assert(m_channels[fd] == channel);
     assert(channel->isNoneEvent());
 
     int index = channel->index();
     assert(index == kAdded || index == kDeleted);
+
     /* 从ChannelMap中按fd删除 */
     size_t n = m_channels.erase(fd);//erase返回删除的元素数，对于唯一性map只可能为0或1
     assert(n == 1);
@@ -125,4 +130,52 @@ void EpollPoller::removeChannel(Channel *channel)
         update(EPOLL_CTL_DEL, channel);
     }
     channel->set_index(kNew);
+}
+/**
+ * @brief 由EventLoop调用poller.poll
+ * 
+ * @param timeoutMs 事件循环超时时间
+ * @param activeChannels 把EventLoop中的ChannelList通过指针传给poller, poller将回写发生事件的信息以通知EventLoop
+ * @return Timestamp 
+ */
+Timestamp EpollPoller::poll(int timeoutMs, ChannelList* activeChannels)
+{
+    LOG_INFO("function: %s, fd total count: %lu\n", __FUNCTION__, m_channels.size());
+    /* epoll_wait的第二个参数本来需要传入纯粹的数组, 但本项目为了便于数组的扩容, 使用vector管理, 为了找到地址, 传入了首元素的地址 */
+    int numEvents = epoll_wait(m_epollfd, &*m_events.begin(),
+                               static_cast<int>(m_events.size()), timeoutMs);
+    int savedErrno = errno;
+    Timestamp now(Timestamp::now());
+    if(numEvents > 0)//有事件发生
+    {
+        LOG_INFO("%d events happened\n", numEvents);
+        fillActiveChannels(numEvents, activeChannels);
+    }
+    if(numEvents == m_events.size())//事件全部发生
+    {
+        m_events.resize(m_events.size() * 2);
+    }
+    else if(numEvents == 0)
+    {
+        LOG_INFO("%s :timeout!\n", __FUNCTION__);
+    }
+    else            // < 0
+    {
+        if(savedErrno != EINTR)
+        {
+            errno = savedErrno;
+            LOG_ERROR("%s error: %d\n", __FUNCTION__, errno);
+        }
+    }
+    return now;
+}
+void EpollPoller::fillActiveChannels(int numEvents, ChannelList *activeChannels) const
+{
+    for(int i = 0; i < numEvents; ++i)
+    {
+        Channel * channel = static_cast<Channel*>(m_events[i].data.ptr);
+        /* channel自己的revents 根据poller中的m_events数组[i].events设置 */
+        channel->set_revents(m_events[i].events);
+        activeChannels->push_back(channel);
+    }
 }
