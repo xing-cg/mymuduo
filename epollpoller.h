@@ -22,6 +22,7 @@ private:
 private:
     int m_epollfd;
     using EventList = std::vector<struct epoll_event>;
+	/* vector<epoll_event> */
     EventList m_events;
     /* EventList初始的长度 */
 	static const int kInitEventListSize = 16;
