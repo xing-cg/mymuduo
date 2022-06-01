@@ -132,7 +132,9 @@ void EpollPoller::removeChannel(Channel *channel)
     channel->set_index(kNew);
 }
 /**
- * @brief 由EventLoop调用poller.poll
+ * @brief 由EventLoop调用poller.poll;
+ * 1. epoll_wait, 第1个参数: epollfd为成员属性m_epollfd, 第2个参数: 数组首址, 为成员属性m_events首元素的首址;
+ * 2. 若epoll_wait返回值大于0则有事件发生, 调用fillActiveChannels函数, 第1个参数为事件数目, 第2个参数是activeChannels(vector容器)指针;
  * 
  * @param timeoutMs 事件循环超时时间
  * @param activeChannels 把EventLoop中的ChannelList通过指针传给poller, poller将回写发生事件的信息以通知EventLoop
@@ -169,6 +171,12 @@ Timestamp EpollPoller::poll(int timeoutMs, ChannelList* activeChannels)
     }
     return now;
 }
+/**
+ * @brief 
+ * 
+ * @param numEvents 
+ * @param activeChannels 
+ */
 void EpollPoller::fillActiveChannels(int numEvents, ChannelList *activeChannels) const
 {
     for(int i = 0; i < numEvents; ++i)
