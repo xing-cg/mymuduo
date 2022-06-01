@@ -10,13 +10,7 @@ namespace CurrentThread
      */
     extern __thread int t_cachedTid;
     /* 通过Linux系统调用SYS_gettid, 加载当前线程的tid值到t_cachedTid */
-    void cacheTid()
-    {
-        if(t_cachedTid == 0)
-        {
-            t_cachedTid = static_cast<pid_t>(syscall(SYS_gettid));
-        }
-    }
+    void cacheTid();
     /* 返回当前线程的tid, 若加载过则直接返回存储过的值 */
     inline int tid()
     {
