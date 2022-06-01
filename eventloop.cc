@@ -57,7 +57,7 @@ void EventLoop::handleRead()
     ssize_t n = read(m_wakeupFd, &one, sizeof one);
     if(n != sizeof one)
     {
-        LOG_ERROR("%s reads %d bytes instead of 8", __FUNCTION__, n);
+        LOG_ERROR("%s reads %lu bytes instead of 8", __FUNCTION__, n);
     }
 }
 EventLoop::~EventLoop()
@@ -157,7 +157,7 @@ void EventLoop::wakeup()
     ssize_t n = write(m_wakeupFd, &one, sizeof one);
     if(n != sizeof one)
     {
-        LOG_ERROR("%s writes %d bytes instead of 8", __FUNCTION__, n);
+        LOG_ERROR("%s writes %lu bytes instead of 8", __FUNCTION__, n);
     }
 }
 void EventLoop::doPendingFunctors()
