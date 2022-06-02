@@ -1,29 +1,62 @@
-#pragma once
-#include"noncopyable.h"
-#include<functional>
-#include<vector>
-#include<memory>
-class EventLoop;
-class EventLoopThread;
-class EventLoopThreadPool : noncopyable
+#include"eventloopthreadpool.h"
+#include"eventloopthread.h"
+EventLoopThreadPool::EventLoopThreadPool(EventLoop *baseLoop, const std::string &nameArg)
+    : m_baseLoop(baseLoop),
+      m_name(nameArg),
+      m_started(false),
+      m_numThreads(0),
+      m_next(0)
 {
-public:
-    using ThreadInitCallback = std::function<void(EventLoop*)>;
-    EventLoopThreadPool(EventLoop *baseLoop, const std::string &nameArg);
-    ~EventLoopThreadPool();
-    void setThreadNum(int numThreads){m_numThreads = numThreads;}
-    void start(const ThreadInitCallback &cb = ThreadInitCallback());
-    /* 如果在多线程中，m_baseLoop默认以轮询的方式分配channel给subloop */
-    EventLoop* getNextLoop();
-    std::vector<EventLoop*> getAllLoops();
-    bool started() const {return m_started;}
-    const std::string name() const{return m_name;}
-private:
-    EventLoop * m_baseLoop;
-    std::string m_name;
-    bool m_started;
-    int m_numThreads;
-    int m_next;
-    std::vector<std::unique_ptr<EventLoopThread>> m_threads;
-    std::vector<EventLoop*> m_loops;
-};
+
+}
+EventLoopThreadPool::~EventLoopThreadPool()
+{
+    /**
+     * nothing to do, bacause evey loop is on the thread stack,
+     * that will destruct automatically.
+     */
+}
+void EventLoopThreadPool::start(const ThreadInitCallback &cb)
+{
+    m_started = true;
+    for(int i = 0; i < m_numThreads; ++i)
+    {
+        char buf[m_name.size() + 32];
+        /* 以线程池name + 下标序列号 作为thread线程的名字 */
+        snprintf(buf, sizeof buf, "%s%d", m_name.c_str(), i);
+        std::string threadName(buf);
+        m_threads.push_back(std::make_unique<EventLoopThread>(cb, threadName));
+        m_loops.push_back(m_threads.back()->startLoop());
+    }
+    /* m_numThreads == 0时, 上面for循环不会执行, 执行下面的操作 */
+    if(m_numThreads == 0 && cb != nullptr)
+    {
+        cb(m_baseLoop);
+    }
+}
+/* 体现了对subLoop的轮询算法 */
+EventLoop* EventLoopThreadPool::getNextLoop()
+{
+    EventLoop * loop = m_baseLoop;
+    if(!m_loops.empty())
+    {
+        loop = m_loops[m_next];
+        ++m_next;
+        if(m_next >= m_loops.size())
+        {
+            m_next = 0;
+        }
+    }
+    return loop;
+}
+std::vector<EventLoop*> EventLoopThreadPool::getAllLoops()
+{
+    if(m_loops.empty())
+    {
+        return std::vector<EventLoop*>(1, m_baseLoop);
+    }
+    else
+    {
+        return m_loops;
+    }
+}
