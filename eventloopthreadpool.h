@@ -29,12 +29,12 @@ public:
 private:
     /* 用户最开始创建的loop */
     EventLoop * m_baseLoop;
-    std::string m_name;
     /* 包含了所有创建的线程 */
     std::vector<std::unique_ptr<EventLoopThread>> m_threads;
     /* 包含了所有管理着的loop的指针: 通过m_threads中的某个thread进行startLoop()返回loop的指针 */
     std::vector<EventLoop*> m_loops;
 
+    std::string m_name;
     bool m_started;
     int m_numThreads;
     int m_next;
