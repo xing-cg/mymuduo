@@ -1,9 +1,9 @@
 #include"socket.h"
 #include"logger.h"
 #include"inetaddress.h"
-#include<unistd.h>  //close
-#include<sys/socket.h>  //bind
-#include<strings.h> //bzero
+#include<unistd.h>      //close
+#include<sys/socket.h>  //bind  SOL_SOCKET
+#include<strings.h>     //bzero
 #include<netinet/tcp.h> //TCP_NODELAY
 Socket::~Socket()
 {
