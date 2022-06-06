@@ -26,7 +26,6 @@ Acceptor::Acceptor(EventLoop *loop, const InetAddress &listenAddr, bool reusePor
     // TcpServer::start() Acceptor::listen(), 如果有新连接需要执行回调 connfd->channel->subloop
     //baseLoop -> m_acceptChannel(listenfd) -> 
     m_acceptChannel.setReadCallback(std::bind(&Acceptor::handleRead, this));
-
 }
 Acceptor::~Acceptor()
 {
