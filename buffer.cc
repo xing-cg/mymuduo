@@ -1,5 +1,6 @@
 #include"buffer.h"
 #include<sys/uio.h>
+#include<unistd.h>      //::write
 ssize_t Buffer::readFd(int fd, int * savedErrno)
 {
     char extrabuf[65536] = {0};	//栈上内存空间
@@ -26,6 +27,15 @@ ssize_t Buffer::readFd(int fd, int * savedErrno)
     {
         m_writerIndex = m_buffer.size();
         append(extrabuf, n-writable);
+    }
+    return n;
+}
+ssize_t Buffer::writeFd(int fd, int * savedErrno)
+{
+    ssize_t n = ::write(fd, peek(), readableBytes());
+    if(n < 0)
+    {
+        *savedErrno = errno;
     }
     return n;
 }
