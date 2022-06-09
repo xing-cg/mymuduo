@@ -104,7 +104,10 @@ public:
         m_writerIndex += len;
     }
 public:
+    /* 从fd上读取读取 */
     ssize_t readFd(int fd, int * savedErrno);
+    /* 通过fd发生数据 */
+    ssize_t writeFd(int fd, int * savedErrno);
 private:
     std::vector<char> m_buffer;
     size_t m_readerIndex;
