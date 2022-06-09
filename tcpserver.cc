@@ -2,7 +2,8 @@
 #include"logger.h"
 #include<functional>
 using namespace std::placeholders;
-EventLoop* CheckLoopNotNull(EventLoop* loop)
+/* 写为static，防止函数名字冲突 */
+static EventLoop* CheckLoopNotNull(EventLoop* loop)
 {
     if(loop == nullptr)
     {
