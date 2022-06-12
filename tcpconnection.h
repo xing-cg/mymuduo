@@ -22,9 +22,6 @@ public:
     void connectEstablished();
     void connectDestoryed();
 public:
-    /* 发送数据 */
-    void send(const void * message, int len);
-public:
     /* 关闭连接 */
     void shutdown();
 public:
@@ -59,10 +56,33 @@ private:
     void handleClose();
     void handleError();
 private:
-    void sendInLoop(const void * message, size_t len);
+    /**
+     * 发送数据;
+     * 用户会给TcpServer注册onMessageCallback, 
+     * 已建立连接的用户有读写事件时, 尤其是读事件, onMessage会响应; 
+     * 处理完客户端发来的事件后(onMessageCallback), 服务端会send给客户端回发消息; 
+     * 
+     * 收发数据的方式: 
+     * 本项目的数据收发统一使用json或protobuf格式化的字符串进行, 
+     * 所以此send函数的参数为了方便起见, 直接规定为string类型; 
+     */
+    void send(const std::string & buf);
+private:
+    /**
+     * 发送数据;
+     * 应用写的快, 而内核发送数据慢, 
+     * 需要把待发送数据写入缓冲区, 而且设置了水位回调.
+     */
+    void sendInLoop(const void * data, size_t len);
 private:
     void shutdownInLoop();
 /*************************属性*************************/
+private:
+    ConnectionCallback	    m_connectionCallback;       //关于连接的回调
+    MessageCallback	        m_messageCallback;          //已连接用户有读写事件发生时的回调
+    WriteCompleteCallback   m_writeCompleteCallback;    //消息发送完成后的回调
+    HighWaterMarkCallback   m_highWaterMarkCallback;    //高水位回调，为了控制收发流量稳定
+    CloseCallback           m_closeCallback;            //关闭连接的回调
 private:
     EventLoop *m_loop;                  //subLoop
 private:
@@ -82,10 +102,4 @@ private:
     bool m_reading;
     
     size_t m_highWaterMark;             //高水位阈值
-private:
-    ConnectionCallback	    m_connectionCallback;       //关于连接的回调
-    MessageCallback	        m_messageCallback;          //已连接用户有读写事件发生时的回调
-    WriteCompleteCallback   m_writeCompleteCallback;    //消息发送完成后的回调
-    HighWaterMarkCallback   m_highWaterMarkCallback;    //高水位回调，为了控制收发流量稳定
-    CloseCallback           m_closeCallback;            //关闭连接的回调
 };
