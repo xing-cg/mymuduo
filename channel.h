@@ -119,7 +119,7 @@ private:
 
 private:
     EventLoop * m_loop; /* 从属的loop */
-    const int m_fd;     /* fd，即Polle监听的对象 */
+    const int m_fd;     /* fd，即Poller监听的对象 */
     int m_events;       /* fd感兴趣的事件注册信息 */
     int m_revents;      /* poller操作的fd上具体发生的事件 */
     int m_index;
